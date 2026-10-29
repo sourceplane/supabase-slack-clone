@@ -1,0 +1,5 @@
+# Copy to .dev.vars for `pnpm preview` (wrangler dev over the built Worker):
+# your Supabase project's URL and publishable (anon) key, from the project's
+# API settings. `next dev` reads .env.local instead (.env.example).
+NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
