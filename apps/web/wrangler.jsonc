@@ -1,0 +1,37 @@
+// wrangler.template.jsonc is the source and wrangler.jsonc is rendered from
+// it by tooling/wire: edit the template, never the render. Two renders:
+//
+//   - committed: the render from wiring.fixture.json (`pnpm run wire:fixture`),
+//     a placeholder project URL and key. `wrangler dev`, the dev verify lane
+//     and the composition's structure check (which runs BEFORE the build, in a
+//     fresh checkout) all read it, so it has to exist without a build. Edit
+//     this file and re-render; tests/web fails when the two disagree.
+//   - deployed: the stage and prod lanes re-render it inside their own job
+//     tree, before the build, from the wiring document the `supabase`
+//     Terraform root lease-publishes (WIRING_SUPABASE_<ENV>,
+//     apps/web/component.yaml).
+//
+// `next build` reads the two vars below from whichever render it finds
+// (next.config.ts) and inlines them into the browser bundle, so the browser
+// and the Worker always talk to the same project. The workers-assets
+// composition deploys one environment per job with no wrangler `--env`, so a
+// placeholder token names the environment a render is for.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "supabase-slack-clone-web",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "observability": { "enabled": true },
+  // The Supabase project the browser and the Worker talk to. The publishable
+  // (anon) key is public by design — row-level security protects the data —
+  // so it is a var, not a secret. Locally, apps/web/.dev.vars overrides both.
+  "vars": {
+    "NEXT_PUBLIC_SUPABASE_URL": "https://stage-project-ref.supabase.co",
+    "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_fixture_stage"
+  }
+}
