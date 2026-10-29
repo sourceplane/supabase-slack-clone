@@ -1,0 +1,31 @@
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: SL-1
+  title: "The spec"
+spec:
+  goal: The repository is born with its intent, its CI and its shared tooling, and the supabase-slack-clone epic — declaration, doc set and task contracts — is on main
+  affects:
+    - intent.yaml
+    - package.json
+    - pnpm-workspace.yaml
+    - pnpm-lock.yaml
+    - turbo.json
+    - .gitignore
+    - .vscode/**
+    - .github/workflows/ci.yml
+    - .github/workflows/tag.yml
+    - tooling/tsconfig/**
+    - tooling/eslint/**
+    - apps/.gitkeep
+    - infra/.gitkeep
+    - packages/.gitkeep
+    - tests/.gitkeep
+    - README.md
+    - specs/**
+    - tasks/**
+  doneWhen:
+    - orun validate accepts intent.yaml, and ci.yml plans nothing while the workspace is the placeholder
+    - epic.yaml, README, design, implementation plan, risks and status are merged
+    - the five task contracts exist
+  gates: []

@@ -1,0 +1,43 @@
+# The epic's declaration. metadata.name equals the directory name; metadata.key
+# is the task-key prefix this epic reserves (SL → SL-1, SL-2, …). Owner, target
+# date and health are the platform's — never written here.
+apiVersion: orun.io/v1
+kind: Epic
+metadata:
+  name: supabase-slack-clone
+  key: SL
+spec:
+  title: "Supabase's Next.js Slack clone on Cloudflare Workers"
+  summary: "Supabase's Slack clone example — a Next.js (pages router) team chat whose browser talks to Supabase Auth, the Data API and Realtime with the publishable key, with moderator and admin roles carried in every session by a custom access-token hook and enforced by row-level security — runs on Cloudflare Workers + Static Assets through @opennextjs/cloudflare, with the Supabase project provisioned by Terraform through Orun, the example's migrations and seed applied by db-migrate, and the hook its config.toml switches on set by the same runner. Then it becomes an Orun baseline that takes a new product from nothing to live in one landing."
+  state: started
+  milestones:
+    - name: "SL0 — the spec"
+      exitCriteria:
+        - "intent.yaml, ci.yml (the turso-starter copy, by way of supabase-starter), tag.yml, the root manifests and the shared tooling are on main"
+        - "the doc set and the task contracts are on main"
+      tasks: [SL-1]
+    - name: "SL1 — the chat app on Workers"
+      exitCriteria:
+        - "apps/web is the upstream example, with next pinned, built by `next build` + `opennextjs-cloudflare build`"
+        - "the wrangler config renders per environment from the supabase root's wiring document (fixture in verify, live in deploy), and next build inlines the same project"
+        - "/api/health answers only from the Worker, read-only: the project's Auth reachable with the build's key and the chat's tables known to its Data API"
+        - "`pnpm typecheck`, `pnpm lint`, `pnpm test` and `pnpm build` are green"
+      tasks: [SL-2]
+    - name: "SL2 — the Supabase project from Terraform, the schema through db-migrate"
+      exitCriteria:
+        - "infra/terraform/supabase provisions the stage and prod projects, points their Auth at the Worker and publishes the URL, the publishable key and the database credentials as orun secrets — no service-role key"
+        - "packages/db carries upstream's two migrations and its seed byte for byte, and db-migrate applies them, then switches on the custom access-token hook through the Management API"
+        - "tests/db proves the schema on Postgres in process: the roles trigger, the hook's claims, row-level security by role and the Realtime publication"
+      tasks: [SL-3]
+    - name: "SL3 — ready to instantiate"
+      exitCriteria:
+        - "the README says how to run, test, preview and deploy it through Orun"
+        - "the as-built status records every departure from the upstream example"
+      tasks: [SL-4]
+    - name: "SL4 — a baseline"
+      exitCriteria:
+        - "blueprint.yaml (the console card, requires [github, cloudflare, supabase]) and repo-blueprint.yaml (the build) take a new product from nothing to live on stage and prod in ONE landing, then record it (01-product, 02-docs)"
+        - "the product's own push-to-main plan converges supabase → db-migrate → web per environment, every edge enforced on main and advisory on a pull request"
+        - "a product ships AGENTS.md, its own README (with Deploy by hand, Roles and Your first migration) and its operating contract, and none of the factory"
+        - "Baseline CI is green: contract tests, the blueprint read by the pinned orun, the leak gate, the offline bootstrap and the product's plans, and the end-to-end tier — db-migrate's own steps against a Supabase stand-in, then the chat driven as a member, a moderator and an admin"
+      tasks: [SL-5]

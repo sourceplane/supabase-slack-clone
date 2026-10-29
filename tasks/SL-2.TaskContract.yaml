@@ -1,0 +1,21 @@
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: SL-2
+  title: "The chat app on Workers"
+spec:
+  goal: Supabase's Slack clone example runs on Cloudflare Workers + Static Assets through @opennextjs/cloudflare, its code upstream's, its project read from one rendered wrangler config, with a read-only health check only the Worker can answer
+  affects:
+    - apps/web/**
+    - apps/.gitkeep
+    - tests/web/**
+    - tests/.gitkeep
+    - tooling/wire/**
+    - pnpm-lock.yaml
+    - README.md
+  doneWhen:
+    - the example's pages, components, styles and data layer are upstream's, with next pinned and only the departures the status records
+    - wrangler.jsonc is the committed fixture render of its template, and next build inlines the project it names
+    - /api/health answers 200 only when the project's Auth answers the build's key and its Data API knows the channels table
+    - pnpm typecheck, lint, test and build are green
+  gates: []
