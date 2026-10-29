@@ -8,7 +8,7 @@ The upstream code stays the code: `lib/Store.js` (the client, the data hooks, th
 
 | Field | Value |
 |-------|-------|
-| Status | In progress — SL0–SL1 shipped ([#1](https://github.com/sourceplane/supabase-slack-clone/pull/1), [#2](https://github.com/sourceplane/supabase-slack-clone/pull/2)), SL2 in review |
+| Status | In progress — SL0–SL2 shipped ([#1](https://github.com/sourceplane/supabase-slack-clone/pull/1)–[#3](https://github.com/sourceplane/supabase-slack-clone/pull/3)), SL3 in review, SL4 next |
 | Cluster | **SL** (SL0–SL4) |
 | Owner(s) | `apps/web` (the app) · `tests/web` · `infra/terraform/supabase` (the project) · `packages/db` + `infra/db-migrate` (the schema) · `tests/db` |
 | Builds on | `supabase-starter` — the shape of the repository and of the baseline, the `supabase` Terraform root, the stand-in; `sveltekit-saas` — the db-migrate lane on a Supabase project |
