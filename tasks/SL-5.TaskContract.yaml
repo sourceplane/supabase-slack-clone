@@ -1,0 +1,35 @@
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: SL-5
+  title: "A baseline"
+spec:
+  goal: The repository is an Orun baseline in supabase-starter's current shape — a card and a build document that take a new product from nothing to live on stage and prod in one landing (the Supabase project, the schema, then the app), branded as its own, with sign-up and roles working on the first deploy and no SMTP server, and gates that prove it offline
+  affects:
+    - blueprint.yaml
+    - repo-blueprint.yaml
+    - BOOTSTRAP.md
+    - README.md
+    - .baseline/**
+    - tooling/rebrand/**
+    - tooling/bootstrap/**
+    - tooling/catalog/**
+    - hooks/**
+    - testing/**
+    - docs/phases/**
+    - ai/context/**
+    - .github/workflows/baseline.yml
+    - apps/web/**
+    - infra/**
+    - packages/**
+    - tests/**
+    - specs/**
+    - tasks/**
+  doneWhen:
+    - orun v2.88.0 reads repo-blueprint.yaml, and the card agrees with it
+    - the product's own push-to-main plan orders supabase → db-migrate → web, enforced, and a pull request's plan holds every edge advisory
+    - every key the supabase apply publishes is read in the convergence, fail-closed, so the phase awaits only the watch and the probe
+    - a product built offline migrates through db-migrate's own steps, builds in the job tree orun stages with the stage wiring inlined, is refused by its own smoke before the migrations and passes after, and chats as a member, a moderator and an admin against a local Supabase stand-in
+    - the as-built status records the departures and what is not yet proven live
+  gates:
+    - checks

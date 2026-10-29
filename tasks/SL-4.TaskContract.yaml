@@ -1,0 +1,14 @@
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: SL-4
+  title: "Ready to instantiate"
+spec:
+  goal: A reader can run, test, preview and deploy the chat from its README, and the as-built status records every departure from the upstream example
+  affects:
+    - README.md
+    - specs/epics/supabase-slack-clone/**
+  doneWhen:
+    - the README opens with the upstream example and maps it to Vercel and Supabase
+    - IMPLEMENTATION-STATUS lists every departure, each with its reason
+  gates: []

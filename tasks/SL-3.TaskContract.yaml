@@ -1,0 +1,21 @@
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: SL-3
+  title: "The Supabase project from Terraform, the schema through db-migrate"
+spec:
+  goal: A Supabase project per environment comes from Terraform with its Auth pointed at the Worker, the example's migrations and seed are applied to it by db-migrate, and the access-token hook its config.toml switches on is set by the same runner after them
+  affects:
+    - infra/**
+    - packages/**
+    - tests/db/**
+    - tooling/migrations/**
+    - apps/web/component.yaml
+    - pnpm-lock.yaml
+  doneWhen:
+    - the supabase root publishes WIRING_SUPABASE and the three database credentials, and no service-role key
+    - packages/db carries upstream's 010_init, 020_auth_hook and 030_seed byte for byte, with their checksums in the manifest
+    - the runner applies them, then PATCHes the project's Auth config with the hook and reads it back
+    - tests/db holds the schema to its roles, its hook, its policies and its publication
+    - web waits on supabase and db-migrate, enforced on main, advisory on a pull request
+  gates: []
