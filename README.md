@@ -9,9 +9,9 @@ on **Cloudflare Workers + Static Assets** through
 [`@opennextjs/cloudflare`](https://opennext.js.org/cloudflare), with the
 Supabase project itself provisioned by Terraform and its schema applied by
 migrations through [Orun](https://github.com/sourceplane/orun), and packaged
-as an **Orun baseline** in SL4: one command will take a new product from
-nothing to live on stage and prod, in its own repository, under its own
-name, in ONE landing.
+as an **Orun baseline**: one command takes a new product from nothing to
+live on stage and prod, in its own repository, under its own name, in ONE
+landing.
 
 The example's code is the code. What the port changes is what the Workers
 runtime and a fresh, unattended deployment force: `next` pinned (upstream
@@ -23,13 +23,57 @@ the access-token hook `supabase/config.toml` switched on set by that runner
 through the Management API, each project created with its Auth pointed at
 the Worker and email confirmation off (so anyone can sign up on the first
 deploy, with no SMTP server), and a read-only `/api/health` only the Worker
-can answer. What the baseline adds (SL4) is everything needed to make a copy
-of it somebody else's — built the way
+can answer. What the baseline adds is everything needed to make a copy of it
+somebody else's — built the way
 [supabase-starter](https://github.com/sourceplane/supabase-starter) builds a
-product, in one landing. See
-[`specs/epics/supabase-slack-clone`](specs/epics/supabase-slack-clone/README.md)
+product, in one landing. See [`specs/epics/supabase-slack-clone`](specs/epics/supabase-slack-clone/README.md)
 for the design, the milestones and the as-built status, including every
 departure.
+
+## Instantiating a product
+
+```bash
+git clone --depth 1 --branch <baseline-tag> https://github.com/sourceplane/supabase-slack-clone
+cd supabase-slack-clone
+orun new --blueprint repo-blueprint.yaml --out ~/products/acme-chat --run-hooks --resume \
+  --set reponame=acme-chat --set productname="Acme Chat" \
+  --set githuborg=acme-inc --set subdomain=<workers-dev-subdomain>
+```
+
+Or, once the platform's registry lists it, from the Orun console (Baselines →
+`supabase-slack-clone` → Build). Two phases: **`01-product`** creates the
+repository, mints the four brokered credentials (Cloudflare and Supabase) and
+lands the whole product as one pull request, whose convergence on `main`
+provisions, migrates and deploys it per environment in a fixed order —
+
+```
+supabase ──▶ db-migrate ──▶ web
+```
+
+— every edge `mode: enforced` on a push to main and advisory on a pull
+request; then **`02-docs`** records the live deployment from probed facts.
+**[BOOTSTRAP.md](BOOTSTRAP.md)** is the operator guide;
+[docs/phases/](docs/phases/README.md) has a page per phase. The Supabase
+organization needs room for **two** projects (stage and prod) — the free
+plan's limit.
+
+The new repository receives the **product only** — the app, the Terraform
+root, the migrations, the tests, its CI, its tooling, a README and an
+AGENTS.md of its own and its operating contract — renamed throughout to the
+product's name, repository, Worker and Supabase projects. None of this
+repository's machinery ships.
+
+| What makes it a baseline | Where |
+|---|---|
+| The console card (inputs, secrets, programme) | `blueprint.yaml` |
+| The build document (modules, phases, hooks) | `repo-blueprint.yaml` |
+| This tree's identity, the product's README and AGENTS.md, and the bootstrap's task contracts | `.baseline/` |
+| The rename engine (product-name seam: `apps/web/lib/site.ts`) | `tooling/rebrand/rebrand.mjs` |
+| The bootstrap's helpers (deferrals, redeploy marker, work-tree strip) | `tooling/bootstrap/` |
+| The deployment-record renderer | `hooks/render-deployment-docs.sh` |
+| The product's context pack | `ai/context/` |
+| The baseline's tests: contract, leak, offline bootstrap and plans, end to end | `testing/`, `.github/workflows/baseline.yml` |
+| Cutting a `baseline-vN` tag | `.github/workflows/tag.yml` |
 
 ## What is here (the product)
 
@@ -54,35 +98,10 @@ pnpm test
 pnpm build              # next build + opennextjs-cloudflare build → apps/web/.open-next
 ```
 
-The build needs no Supabase project: without one it inlines the committed
-`wrangler.jsonc`'s placeholder values, and nothing calls them.
-
-## Running it locally
-
-Against any Supabase project with the schema applied (its URL and
-publishable key are in the dashboard → Project Settings → API):
-
-1. Copy `apps/web/.env.example` to `apps/web/.env.local` and fill in the two
-   values; `next dev` and `pnpm build` read it. Then
-   `pnpm --filter @app/web dev` (http://localhost:3000).
-2. Or the built Worker: the same two values in `apps/web/.dev.vars` (copy
-   `.dev.vars.example`), `pnpm build`, then `pnpm --filter @app/web preview`
-   (http://localhost:8787).
-
-The schema comes from the runner the pipeline uses:
-`pnpm --filter @saas/db build`, then
-`SUPABASE_ACCESS_TOKEN=… SUPABASE_PROJECT_REF=… node packages/db/dist/runner/cli.js apply --env stage`
-— every migration the project has not had, then the access-token hook.
-
-## How it deploys
-
-Merges to `main` converge through Orun (`.github/workflows/ci.yml`), per
-environment in a fixed order — the Supabase project, then the migrations,
-then the Worker — every edge enforced on a push to main and advisory on a
-pull request. `stage` deploys first and `prod` once stage has converged;
-`dev` only verifies. Each deploy is smoke-tested over HTTP, `/api/health`
-included. The pipeline plans nothing while `intent.yaml` names the
-placeholder workspace `ws_CHANGE_ME`, as this repository does.
+The build needs no Supabase project. Running it against one — `.env.local`
+for `next dev` and the build, `.dev.vars` for `wrangler dev` — is in the
+product's README (`.baseline/product/README.md`), which is what a product
+built from here carries.
 
 ## How it maps to Vercel and Supabase
 
@@ -105,6 +124,7 @@ service-role key is read anywhere.
 | Workflow | What it runs | Ships to a product |
 |---|---|---|
 | `ci.yml` | the Orun pipeline, and the only workflow a product carries: `orun plan --changed`, then one job per lane. A pull request runs the verify lanes (the app built and dry-deployed per environment, the Supabase root planned, the migrations planned offline; no typecheck, lint or tests), except the bootstrap's own landings (`orun/BASE-*`), where `plan` alone runs and nothing waits for it — the landing was checked in the build box; a merge applies, migrates and deploys stage → prod. It plans nothing while `intent.yaml` names the placeholder workspace `ws_CHANGE_ME`, as this repository does. A manual run (Orunbase's Deploy button, or Run workflow on `main`) plans the environment and components it names under the push-to-main trigger, so they deploy as a merge deploys them | yes |
+| `baseline.yml` | the baseline's own tiers: contract tests; the blueprint read by the pinned orun, the leak gate, the offline bootstrap and the product's own plans; the 01-product landing installed, its fixture rendered, type-checked, linted, tested and built, then built in the job tree orun stages, dry-deployed, and served against a local Supabase stand-in — the smoke refused before the migrations, db-migrate's own steps applying them and the hook, then the smoke passing and the chat driven as a member, a moderator and an admin | no |
 | `tag.yml` | cuts a `baseline-vN` tag (manual) | no |
 
 ## Licence and credit

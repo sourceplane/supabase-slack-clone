@@ -1,0 +1,8 @@
+{
+  "reponame": "acme-chat",
+  "productname": "Acme Chat",
+  "productdomain": "acme.dev",
+  "githuborg": "acme-inc",
+  "subdomain": "acme",
+  "orunWorkspace": "ws_XXXXXXXX"
+}
