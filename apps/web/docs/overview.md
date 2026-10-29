@@ -13,7 +13,8 @@ A Cloudflare Worker with Static Assets (server rendering plus static files), dep
 
 ## Depends on
 
-- (none)
+- **supabase** — Provisions Supabase projects for stage and prod, points their Auth at the chat, and wires the URL and key into orun secrets
+- **db-migrate** — Applies the chat schema (packages/db's migrations) to the stage and prod Supabase projects, then switches on the access-token hook it needs
 
 ## Depended on by
 

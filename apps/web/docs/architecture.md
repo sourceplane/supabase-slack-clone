@@ -18,3 +18,10 @@ Built by the turbo pipeline from `apps/web` and deployed with wrangler.
 ## Variables
 
 `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `NEXT_PUBLIC_SUPABASE_URL`.
+
+## Wiring
+
+Resolved at deploy time from secrets the infrastructure lanes publish (names only):
+
+- `WIRING_SUPABASE_PROD` (optional)
+- `WIRING_SUPABASE_STAGE` (optional)
