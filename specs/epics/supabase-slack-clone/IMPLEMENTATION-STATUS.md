@@ -9,13 +9,12 @@ at `9eaae4cd2cf8e67f9aeadab044e9a14429331c13`.
 | SL0 — the spec | [#1](https://github.com/sourceplane/supabase-slack-clone/pull/1) | ✅ merged |
 | SL1 — the chat app on Workers | [#2](https://github.com/sourceplane/supabase-slack-clone/pull/2) | ✅ merged |
 | SL2 — the Supabase project and the schema | [#3](https://github.com/sourceplane/supabase-slack-clone/pull/3) | ✅ merged |
-| SL3 — ready to instantiate | [#4](https://github.com/sourceplane/supabase-slack-clone/pull/4) | in review |
-| SL4 — a baseline | [#5](https://github.com/sourceplane/supabase-slack-clone/pull/5) | planned |
+| SL3 — ready to instantiate | [#4](https://github.com/sourceplane/supabase-slack-clone/pull/4) | ✅ merged |
+| SL4 — a baseline | [#5](https://github.com/sourceplane/supabase-slack-clone/pull/5) | ✅ merged, tagged `baseline-v1` |
 
-The app builds and its tests pass; the migrations apply on a
-Supabase-shaped Postgres in process. Nothing has been applied against a real
-Supabase organization (risk SL-A); the baseline that bootstraps a product,
-and the tiers that prove it end to end, are SL4.
+Proven offline (Baseline CI, against a local Supabase stand-in); the
+Terraform apply, the migrations and the deploy are gated until a workspace
+is linked, and no live bootstrap has run (risk SL-A).
 
 ## Departures from upstream
 
@@ -36,7 +35,7 @@ byte.
 | `supabase/migrations`, `supabase/seed.sql` | `supabase db push`, `seed.sql` | `packages/db/src/migrations/010_init`, `020_auth_hook`, `030_seed`, byte for byte, applied by db-migrate | One runner and one ledger per project; the seed's `#public` is where the app sends a signed-in user |
 | `supabase/config.toml` `[auth.hook.custom_access_token]` | `supabase config push` | `packages/db/src/auth-config.ts`, set by the runner after the migrations | Auth must not point at a function that does not exist yet (risk SL-B) |
 | `supabase/config.toml` `enable_confirmations = true` | confirmation on | off until the project has SMTP (`authEmailConfirmation`) | A fresh project's built-in email reaches only its organization's members (risk SL-H) |
-| `README.md`, "Deploy with Vercel" | a Vercel clone button | Orun's pipeline (SL4: `orun new`) | A product on Cloudflare does not offer its visitors that |
+| `README.md`, "Deploy with Vercel" | a Vercel clone button | `orun new` | A product on Cloudflare does not offer its visitors that |
 
 ## SL0 — the spec
 
@@ -95,3 +94,35 @@ wrangler config.
 
 The README (the upstream example first, the mapping to Vercel and
 Supabase, how to run, test, preview and deploy) and this status.
+
+## SL4 — a baseline
+
+In supabase-starter's current shape (`SS10`), with db-migrate between the
+project and the app:
+
+- `blueprint.yaml` (requires github, cloudflare, supabase; subdomain from
+  the Cloudflare connection; no domain asked; four brokered secrets; 14
+  minutes) and `repo-blueprint.yaml` (`01-product`, 13 minutes; `02-docs`,
+  1). No await but the convergence watch and the probe: every key the apply
+  publishes is read fail-closed in the convergence (`testing/phases.test.sh`
+  holds it key by key).
+- `.baseline/`: the identity, the product's README (with "Deploy by hand",
+  "Roles", "Your first migration", "Email", "Custom domain") and AGENTS.md,
+  the two task contracts.
+- The rebrand (the `SITE_NAME` seam; migrations never rewritten; the
+  example's home protected), the bootstrap helpers, the deployment record
+  (sign-up, roles and whether the schema is in place, read from
+  `/api/health`), the context pack, the generated component docs.
+- The tiers: contract tests, the blueprint read by orun v2.88.0, the leak
+  gate, the offline bootstrap and the product's plans
+  (`supabase → db-migrate → web`, enforced; advisory on a pull request), and
+  the e2e: the landing's own checks; db-migrate's own steps against the
+  stand-in, which now runs the configured hook; the web lane in its staged
+  job tree with the stage wiring inlined; the smoke refused before the
+  migrations and passing after; and the chat as a member, a moderator and an
+  admin — roles in their sessions, the starter channels with authors, a
+  message posted and read back, deletes allowed and refused by role, a
+  channel added and removed, nothing for the bare publishable key, the
+  publication.
+
+Not proven live: risk SL-A.

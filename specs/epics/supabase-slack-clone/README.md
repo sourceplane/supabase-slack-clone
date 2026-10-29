@@ -8,13 +8,14 @@ The upstream code stays the code: `lib/Store.js` (the client, the data hooks, th
 
 | Field | Value |
 |-------|-------|
-| Status | In progress — SL0–SL2 shipped ([#1](https://github.com/sourceplane/supabase-slack-clone/pull/1)–[#3](https://github.com/sourceplane/supabase-slack-clone/pull/3)), SL3 in review, SL4 next |
+| Status | ✅ SL0–SL4 shipped (SL4 tagged `baseline-v1`). Supabase apply, migration and live deploy gated on a linked workspace; not yet proven by a live bootstrap (risk SL-A) |
 | Cluster | **SL** (SL0–SL4) |
 | Owner(s) | `apps/web` (the app) · `tests/web` · `infra/terraform/supabase` (the project) · `packages/db` + `infra/db-migrate` (the schema) · `tests/db` |
 | Builds on | `supabase-starter` — the shape of the repository and of the baseline, the `supabase` Terraform root, the stand-in; `sveltekit-saas` — the db-migrate lane on a Supabase project |
 | Upstream | [supabase/supabase `examples/slack-clone/nextjs-slack-clone`](https://github.com/supabase/supabase/tree/master/examples/slack-clone/nextjs-slack-clone), at `9eaae4cd2cf8e67f9aeadab044e9a14429331c13` |
 | Licence | the example's `package.json` says MIT; the supabase/supabase repository is Apache-2.0, whose text `apps/web/LICENSE` carries |
 | Decisions locked | (1) OpenNext on Workers + Static Assets, no Hyperdrive: nothing on the server opens a Postgres connection. (2) The publishable key is a wrangler var; no service-role key is published or read. (3) Upstream's migrations and seed are db-migrate migrations, byte for byte. (4) The access-token hook is set by the runner after the migrations, not by Terraform. (5) supabase → db-migrate → web, enforced on main, advisory on pull requests. (6) `/api/health` is read-only and answers only from the Worker. |
+| Shipped as | `baseline-v1` (SL4) |
 
 ## Read order
 

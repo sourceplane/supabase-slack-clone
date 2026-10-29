@@ -1,0 +1,167 @@
+# The supabase-slack-clone card: what the console's Blueprints page renders and the
+# platform's bootstrap door consumes.
+#
+# THIS FILE IS NOT THE BUILD. `spec.bootstrap.blueprint` names the build
+# document — `repo-blueprint.yaml`, whose phases a runner places. This card is
+# what an operator reads and fills in before pressing Build, and
+# `testing/manifest.test.sh` compares every list below to the document that
+# actually does the thing, not to a copy of itself.
+#
+# The division of labour with the registry is strict: the registry (orun-cloud
+# `infra/baselines-registry/baselines.yaml`) owns identity and commerce — id,
+# visibility, tier, the pinned tag. This file owns the build contract. Neither
+# restates the other, which is why there is no `tag` here: this file is
+# fetched AT the tag the registry pins.
+apiVersion: orun.io/v1
+kind: Blueprint
+metadata:
+  name: supabase-slack-clone
+  displayName: Supabase Slack Clone — a Next.js team chat on Supabase and Cloudflare Workers
+  description: >
+    Supabase's Slack clone example as a product of its own: a team chat with
+    channels, messages that arrive live over Supabase Realtime, email and
+    password sign-up, and moderator and admin roles carried in each user's
+    session by an Auth hook and enforced by row-level security, built by
+    OpenNext into one Cloudflare Worker. Terraform creates a Supabase project
+    per environment — two in all, stage and prod, which is the free plan's
+    limit per organization — and points its Auth at the Worker; db-migrate
+    applies the chat schema and switches the hook on; CI deploys the app to
+    both on merge, after its project and its schema. Live in about fourteen
+    minutes.
+  tags: [supabase, realtime, chat, cloudflare, nextjs]
+spec:
+  source:
+    repo: sourceplane/supabase-slack-clone
+    # No `tag`. The registry pins it; this file is fetched at it.
+
+  # ── What the operator reads first ────────────────────────────────────────
+  overview:
+    lede: >
+      A team chat — channels, live messages, members, moderators and admins —
+      on Cloudflare at the edge, its Supabase project held by Terraform and
+      its schema by migrations.
+    architecture:
+      - layer: Edge
+        items: [web]
+      - layer: Data
+        items: [Supabase Auth, Supabase Postgres, Supabase Realtime]
+      - layer: Delivery
+        items: [Terraform, db-migrate, GitHub Actions, OpenNext]
+    outcome:
+      - Live on stage and prod, sign-up and the two starter channels working
+      - A Supabase project per environment, migrated, its Auth pointed at the app
+      - Roles in every session, enforced by row-level security
+
+  requires:
+    # GitHub arrives as the App installation plus the repo link; Cloudflare
+    # and Supabase are the two provider connections the build mints from.
+    # The Supabase organization needs room for TWO projects (stage and prod):
+    # the free plan allows two active projects per organization.
+    integrations: [github, cloudflare, supabase]
+    apiKeyRole: admin          # secret writes need the admin floor
+
+  # Every input is collected by the console: keys are lowercase (the
+  # platform's reader refuses anything else), every one carries the `pattern`
+  # its value is checked against before Continue, and a value the console
+  # already holds says so with `from`. repo-blueprint.yaml declares the same
+  # names; `repoPrivate`, `orunWorkspace` and `epicSlug` are build inputs with
+  # defaults (or filled from the build's workspace) and are not asked.
+  #
+  # NOR IS THE DOMAIN. The app goes live on workers.dev, and a domain is an
+  # owner's step after the bootstrap: `productdomain` defaults to empty, the
+  # rebrand writes the reserved placeholder `<reponame>.example.com` where
+  # the domain goes, and the product's README ("Custom domain") says how to
+  # set it. Nothing that needs a domain is removed — it waits for one.
+  inputs:
+    - key: reponame
+      label: Repo name
+      pattern: "^[a-z][a-z0-9-]{1,38}$"
+      # The operator picked the repository; its name IS this value.
+      from: repo.name
+    - key: productname
+      label: Product name
+      pattern: "^[A-Za-z0-9][A-Za-z0-9 .,'&-]{1,48}$"
+      help: The name people see — in every page title and on the sign-in page.
+      example: Acme Chat
+    - key: githuborg
+      label: GitHub organisation
+      pattern: "^[A-Za-z0-9][A-Za-z0-9-]*$"
+      help: The GitHub org or user the product's repository is created under.
+      # DERIVED FROM THE CHOSEN REPOSITORY: its owner IS this value. Declared
+      # because repo-blueprint.yaml requires it — a build may declare more
+      # inputs than this card, but not require one nobody supplies.
+      from: repo.owner
+    - key: subdomain
+      label: workers.dev subdomain
+      pattern: "^[a-z0-9][a-z0-9-]{0,62}$"
+      help: The workers.dev subdomain of the Cloudflare account the app deploys into. Supabase Auth sends its links there.
+      example: acme
+      # READ FROM THE CLOUDFLARE CONNECTION, not asked. The subdomain belongs
+      # to the account the same way its id does, and there is exactly one
+      # right answer — a typed one could only be wrong, and wrong showed up
+      # after deploy, in the Site URL and redirect allow-list the Supabase
+      # project's Auth is given, the smoke checks and the verify URLs below.
+      # The integration reads it from Cloudflare at connect and on its hourly
+      # health check; the bootstrap door fills this input from the connection
+      # the build is BOUND to, the same one CLOUDFLARE_ACCOUNT_ID and the
+      # deploy tokens mint from, so all three name one account. The console
+      # renders no field for it, and an account with no workers.dev subdomain
+      # refuses the build at the door, naming the fix, before anything is
+      # created.
+      from: connection.cloudflare.workersSubdomain
+
+  # ── PREVIEW ONLY. repo-blueprint.yaml's `orun.integrations/reconcile@v1`
+  # hooks mint these, brokered, during 01-product — one hook per provider. ─
+  # Transcribed from those hooks' own `provider:` and `secrets:` ({key,
+  # template}) values, in their order, so testing/manifest.test.sh compares
+  # this list to the document that mints them. The console renders them
+  # read-only: no credential is ever typed, shown or stored. Keys that
+  # already exist are kept. Four keys, four scopes: the app needs no
+  # Hyperdrive, D1, KV or R2 — it reaches Supabase over HTTPS with the
+  # project's publishable key, which the Terraform apply publishes itself,
+  # and db-migrate reads the database credentials the same apply publishes.
+  secrets:
+    - key: CLOUDFLARE_API_TOKEN
+      provider: cloudflare
+      template: workers-deploy
+      why: Deploys the app's Worker and its static assets
+    - key: CLOUDFLARE_ACCOUNT_ID
+      provider: cloudflare
+      template: account-id
+      why: Connection fact, not a secret
+      fact: true
+    - key: SUPABASE_ACCESS_TOKEN
+      provider: supabase
+      template: management-access
+      why: Creates the projects, sets their Auth URLs, applies the migrations and switches on the Auth hook
+    - key: SUPABASE_ORG_ID
+      provider: supabase
+      template: org-id
+      why: Connection fact, not a secret
+      fact: true
+
+  # ── PREVIEW ONLY. repo-blueprint.yaml's run-level `hooks.preInstantiate`
+  # opens these — the epic, every milestone in this order, every task — before
+  # the first phase places. Idempotent by identity, so a re-run finds what it
+  # made before.
+  programme:
+    epicSlug: team-chat-baselining   # = repo-blueprint.yaml's `epicSlug` default
+    epicName: "Team chat baselining — {productname}"
+    milestones:
+      - name: 01-product
+      - name: 02-docs
+
+  bootstrap:
+    # THE BUILD DOCUMENT. There is no umbrella workflow and no agent brief:
+    # every phase is declared in it and orun runs it.
+    blueprint: repo-blueprint.yaml
+    # Summed from the phases' expectedMinutes (13 + 1). An estimate until a
+    # bootstrap measures it: a Supabase project takes five to seven minutes to
+    # come up, the migrations wait on it, and the app's build waits on both.
+    expectedMinutes: 14
+    tokenChannel: ORUN_TOKEN_FILE   # how a runner hands over its refreshed token
+  verify:
+    urls:
+      - "https://{reponame}-web-{env}.{subdomain}.workers.dev"
+      - "https://{reponame}-web-{env}.{subdomain}.workers.dev/api/health"
+    envs: [stage, prod]
