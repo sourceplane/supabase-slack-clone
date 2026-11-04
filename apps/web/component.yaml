@@ -74,6 +74,29 @@ spec:
           - profile: deploy
             when:
               triggerRef: github-push-main
+  # How the app runs itself for orun.work's live Preview tab
+  # (saas-parallel-baselining PB4): `orun preview` starts this, and a coding
+  # session keeps it running while it works, so the person watches it change
+  # as it is built. The dev server binds the box's loopback only, on a fixed
+  # port, and installs first, so a checkout the session has not installed yet
+  # still comes up.
+  # It installs only this app's packages and runs `next dev` alone, with its
+  # heap capped: the box is shared with the agent. `next dev` reads the
+  # Supabase project from .env.local, and lib/Store.js's client throws at
+  # import without one, so until a session writes that file the preview starts
+  # on .env.example's placeholders (the Supabase CLI's local URL, where
+  # nothing listens, and no key): the sign-in page comes up, and signing in
+  # waits for a real project. A .env.local, or the variables already set, win.
+  preview:
+    run:
+      - sh
+      - -c
+      - pnpm install --frozen-lockfile --prefer-offline --filter "@app/web..." && if [ ! -f .env.local ]; then export NEXT_PUBLIC_SUPABASE_URL="${NEXT_PUBLIC_SUPABASE_URL:-http://127.0.0.1:54321}" NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY="${NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:-your-publishable-key}"; fi && exec node_modules/.bin/next dev -H 127.0.0.1 -p 3000
+    port: 3000
+    path: /
+    env:
+      NODE_OPTIONS: --max-old-space-size=1024
+      NEXT_TELEMETRY_DISABLED: "1"
   parameters:
     nodeVersion: "22"
     pnpmVersion: "10.12.1"
